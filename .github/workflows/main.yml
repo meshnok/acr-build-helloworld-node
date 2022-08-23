@@ -23,9 +23,9 @@ jobs:
         - run: |
             docker build . -t ${{ secrets.REGISTRY_LOGIN_SERVER }}/sampleapp2:${{ github.sha }}
         - uses: Azure/container-scan@v0.1
-                name:Scan image for vulnerabilities
-                  id:container-scan
-                continue-on-error:true
+          name: Scan image for vulnerabilities
+          id: container-scan
+          continue-on-error: true
           env:
            DOCKER_CONTENT_TRUST: 1
           with:
