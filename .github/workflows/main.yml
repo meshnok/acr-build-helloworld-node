@@ -22,7 +22,7 @@ jobs:
             password: ${{ secrets.REGISTRY_PASSWORD }}
         - run: |
             docker build . -t ${{ secrets.REGISTRY_LOGIN_SERVER }}/sampleapp:${{ github.sha }}
-        - uses: Azure/container-scan@v0.1
+        - uses: Azure/container-scan@v0
 #                   name:Scan image for vulnerabilities
 #                   id:container-scan
 #                  continue-on-error:true
