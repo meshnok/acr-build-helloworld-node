@@ -22,6 +22,13 @@ jobs:
             password: ${{ secrets.REGISTRY_PASSWORD }}
         - run: |
             docker build . -t ${{ secrets.REGISTRY_LOGIN_SERVER }}/sampleapp:${{ github.sha }}
+        - uses: Azure/container-scan@v0 
+                   name:Scan image for vulnerabilities
+                   id:container-scan
+                   continue-on-error:true
+          with:
+           image-name: ${{ secrets.REGISTRY_LOGIN_SERVER }}/sampleapp:${{ github.sha }}
+                     
             docker push ${{ secrets.REGISTRY_LOGIN_SERVER }}/sampleapp:${{ github.sha }}
 
         - name: 'Deploy to Azure Container Instances'
@@ -36,25 +43,9 @@ jobs:
             name: aci-sampleapp
             location: 'west us'
             
-        - name: Build and Tag Image
-          run: |
-               echo "github.sha=$GITHUB_SHA"
-               docker build -t ${{ secrets.REGISTRY_LOGIN_SERVER }}/k8sdemo:${{ github.sha }} .
-          
-                 - uses: Azure/container-scan@v0 
-                   name: Scan image for vulnerabilities
-                   id: container-scan
-                   continue-on-error: true
-                   with:
-                    image-name: ${{ secrets.REGISTRY_LOGIN_SERVER }}/k8sdemo:${{ github.sha }} 
-
-               - name: Push Docker image 
-               run: |
-               docker push ${{ secrets.REGISTRY_LOGIN_SERVER }}/k8sdemo:${{ github.sha }}
-
-                - name: Post logs to appinsights
-                  uses: Azure/publish-security-assessments@v0
-                  with: 
-                  scan-results-path: ${{ steps.container-scan.outputs.scan-report-path }}
-                  connection-string: ${{ secrets.AZ_APPINSIGHTS_CONNECTION_STRING }}
-                  subscription-token: ${{ secrets.AZ_SUBSCRIPTION_TOKEN }}  
+        - name: Post logs to appinsights
+          uses: Azure/publish-security-assessments@v0
+          with: 
+           scan-results-path: ${{ steps.container-scan.outputs.scan-report-path }}
+           connection-string: ${{ secrets.AZ_APPINSIGHTS_CONNECTION_STRING }}
+           subscription-token: ${{ secrets.AZ_SUBSCRIPTION_TOKEN }}  
