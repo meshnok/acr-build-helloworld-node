@@ -20,34 +20,56 @@ jobs:
             login-server: ${{ secrets.REGISTRY_LOGIN_SERVER }}
             username: ${{ secrets.REGISTRY_USERNAME }}
             password: ${{ secrets.REGISTRY_PASSWORD }}
-        - run: |
-            docker build . -t ${{ secrets.REGISTRY_LOGIN_SERVER }}/sampleapp:${{ github.sha }}
-        - uses: Azure/container-scan@v0
-          name: Scan image for vulnerabilities
-          id: container-scan
-          continue-on-error: true
- #         env:
- #          DOCKER_CONTENT_TRUST: 1
-          with:
-            image-name: cnrtest.azurecr.io/sampleapp:${{ github.sha }}
-            
-              docker push ${{ secrets.REGISTRY_LOGIN_SERVER }}/sampleapp:${{ github.sha }}
+        - name: Build and Tag Image
+          run: |
+           echo "github.sha=$GITHUB_SHA"
+           docker build -t githubdemo1.azurecr.io/k8sdemo:${{ github.sha }} .
 
-        - name: 'Deploy to Azure Container Instances'
-          uses: 'azure/aci-deploy@v1'
-          with:
-            resource-group: ${{ secrets.RESOURCE_GROUP }}
-            dns-name-label: ${{ secrets.RESOURCE_GROUP }}${{ github.run_number }}
-            image: ${{ secrets.REGISTRY_LOGIN_SERVER }}/sampleapp:${{ github.sha }}
-            registry-login-server: ${{ secrets.REGISTRY_LOGIN_SERVER }}
-            registry-username: ${{ secrets.REGISTRY_USERNAME }}
-            registry-password: ${{ secrets.REGISTRY_PASSWORD }}
-            name: aci-sampleapp
-            location: 'west us'
-            
-        - name: Post logs to appinsights
-          uses: Azure/publish-security-assessments@v0
-          with: 
+           - uses: Azure/container-scan@v0 
+            name: Scan image for vulnerabilities
+            id: container-scan
+           continue-on-error: true
+           with:
+            image-name: githubdemo1.azurecr.io/k8sdemo:${{ github.sha }} 
+
+           - name: Push Docker image 
+           run: |
+           docker push githubdemo1.azurecr.io/k8sdemo:${{ github.sha }}
+
+           - name: Post logs to appinsights
+           uses: Azure/publish-security-assessments@v0
+           with: 
            scan-results-path: ${{ steps.container-scan.outputs.scan-report-path }}
            connection-string: ${{ secrets.AZ_APPINSIGHTS_CONNECTION_STRING }}
-           subscription-token: ${{ secrets.AZ_SUBSCRIPTION_TOKEN }}  
+           subscription-token: ${{ secrets.AZ_SUBSCRIPTION_TOKEN }}
+#       - run: |
+#           docker build . -t ${{ secrets.REGISTRY_LOGIN_SERVER }}/sampleapp:${{ github.sha }}
+#      - uses: Azure/container-scan@v0
+#          name: Scan image for vulnerabilities
+#         id: container-scan
+ #        continue-on-error: true
+ #         env:
+ #          DOCKER_CONTENT_TRUST: 1
+ #        with:
+ #          image-name: cnrtest.azurecr.io/sampleapp:${{ github.sha }}
+            
+ #            docker push ${{ secrets.REGISTRY_LOGIN_SERVER }}/sampleapp:${{ github.sha }}
+
+#       - name: 'Deploy to Azure Container Instances'
+#         uses: 'azure/aci-deploy@v1'
+#         with:
+#          resource-group: ${{ secrets.RESOURCE_GROUP }}
+#           dns-name-label: ${{ secrets.RESOURCE_GROUP }}${{ github.run_number }}
+#           image: ${{ secrets.REGISTRY_LOGIN_SERVER }}/sampleapp:${{ github.sha }}
+#           registry-login-server: ${{ secrets.REGISTRY_LOGIN_SERVER }}
+#           registry-username: ${{ secrets.REGISTRY_USERNAME }}
+#           registry-password: ${{ secrets.REGISTRY_PASSWORD }}
+#           name: aci-sampleapp
+#           location: 'west us'
+            
+#       - name: Post logs to appinsights
+#         uses: Azure/publish-security-assessments@v0
+#         with: 
+#          scan-results-path: ${{ steps.container-scan.outputs.scan-report-path }}
+#          connection-string: ${{ secrets.AZ_APPINSIGHTS_CONNECTION_STRING }}
+#          subscription-token: ${{ secrets.AZ_SUBSCRIPTION_TOKEN }}  
